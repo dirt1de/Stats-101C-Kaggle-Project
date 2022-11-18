@@ -14,7 +14,6 @@ train <- read.csv("Acctrain.csv")
 ```
 
 ```{r}
-library(stringr)
 sapply(as.data.frame(is.na(train)), sum)
 train$Temperature.F.[is.na(train$Temperature.F.)] <- mean(train$Temperature.F.[!is.na(train$Temperature.F.)])
 
@@ -27,7 +26,7 @@ train$Visibility.mi.[is.na(train$Visibility.mi.)] <- mean(train$Visibility.mi.[!
 train$Wind_Speed.mph.[is.na(train$Wind_Speed.mph.)] <- mean(train$Wind_Speed.mph.[!is.na(train$Wind_Speed.mph.)])
 
 
-model1 <- glm(as.factor(Severity)~Start_Lat+Start_Lng+End_Lat+End_Lng+Temperature.F.+Wind_Chill.F.+Pressure.in.+Visibility.mi.+Wind_Speed.mph., family = binomial(), data = train)
+# model1 <- glm(as.factor(Severity)~Start_Lat+Start_Lng+End_Lat+End_Lng+Temperature.F.+Wind_Chill.F.+Pressure.in.+Visibility.mi.+Wind_Speed.mph., family = binomial(), data = train)
 
 sapply(as.data.frame(is.na(test)), sum)
 test$Temperature.F.[is.na(test$Temperature.F.)] <- mean(test$Temperature.F.[!is.na(test$Temperature.F.)])
@@ -40,9 +39,9 @@ test$Visibility.mi.[is.na(test$Visibility.mi.)] <- mean(test$Visibility.mi.[!is.
 
 test$Wind_Speed.mph.[is.na(test$Wind_Speed.mph.)] <- mean(test$Wind_Speed.mph.[!is.na(test$Wind_Speed.mph.)])
 
-testPred <- predict(model1, test, type="response")
+# testPred <- predict(model1, test, type="response")
 
-pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
+# pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
 #sample <- cbind(Sample[1], pred)
 #names(sample) <- c("Ob", "SEVERITY")
 #write.csv(sample, "sample.csv", row.names = FALSE)
@@ -53,10 +52,10 @@ pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
 ```
 
 ```{r}
-trainPred <- predict(model1, type="response")
-predTrain <- ifelse(trainPred >= 0.5, "SEVERE", "MILD")
-table(train$Severity, predTrain)
-mean(train$Severity == predTrain)
+# trainPred <- predict(model1, type="response")
+# predTrain <- ifelse(trainPred >= 0.5, "SEVERE", "MILD")
+# table(train$Severity, predTrain)
+# mean(train$Severity == predTrain)
 ```
 
 
@@ -64,6 +63,8 @@ mean(train$Severity == predTrain)
 
 ### Add the duration predictor
 ```{r}
+library(stringr)
+
 train$duration<-as.numeric(as.POSIXct(train$End_Time,
                                       format = "%Y-%m-%dT%H:%M"))-
   as.numeric(as.POSIXct(train$Start_Time, 
@@ -170,7 +171,7 @@ test$Visibility.mi.[is.na(test$Visibility.mi.)] <- median(test$Visibility.mi.[!i
 
 test$Wind_Speed.mph.[is.na(test$Wind_Speed.mph.)] <- median(test$Wind_Speed.mph.[!is.na(test$Wind_Speed.mph.)])
 
-testPred <- predict(model1, test, type="response")
+# testPred <- predict(model1, test, type="response")
 
 # pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
 # sample = data.frame(Ob=1:15000, SEVERITY=pred)
@@ -191,39 +192,30 @@ train.test.data = train[train.test.index,]
 ### Full training data
 ```{r}
 library(tree)
-tree.model = tree(as.factor(Severity) ~ duration+
-                    Zipcode + 
-                    Temperature.F.+
-                    Wind_Chill.F.+
-                    Pressure.in.+
-                    Visibility.mi.+
-                    Wind_Speed.mph.+
-                    Give_Way+
-                    isWeekend+
-                    Description+
-                    Start_Lng+
-                    End_Lng+
-                    road_closed,
+tree.model = tree(as.factor(Severity) ~ 
+                    road_closed+
+                    duration,
                   train.train.data)
 summary(tree.model)
-```
-### Pruning
 
-```{r}
-# cv.tree.out = cv.tree(tree.model,FUN=prune.misclass)
-# par(mfrow=c(1,2))
-# plot(cv.tree.out$size,cv.tree.out$dev,type="b")
-# plot(cv.tree.out$k,cv.tree.out$dev,type="b")
-# 
-# cv.tree.out
-```
+# pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
+# sample = data.frame(Ob=1:15000, SEVERITY=pred)
+# write.csv(sample, "sample.csv", row.names = FALSE)
 
-```{r}
 train.test.pred = predict(tree.model, newdata = train.test.data,
                          type = "class")
 table(train.test.pred, train.test.data$Severity)
 tree.mis.rate=mean(train.test.pred!=train.test.data$Severity)
 tree.mis.rate
+```
+
+```{r}
+testPred = predict(tree.model, newdata = test,
+                         type = "class")
+# pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
+sample = data.frame(Ob=1:15000, SEVERITY=testPred)
+write.csv(sample, "sample.csv", row.names = FALSE)
+
 ```
 
 
