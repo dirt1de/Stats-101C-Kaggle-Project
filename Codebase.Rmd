@@ -64,7 +64,7 @@ test$Wind_Speed.mph.[is.na(test$Wind_Speed.mph.)] <- mean(test$Wind_Speed.mph.[!
 ### Add the duration predictor
 ```{r}
 library(stringr)
-
+library(lubridate)
 train$duration<-as.numeric(as.POSIXct(train$End_Time,
                                       format = "%Y-%m-%dT%H:%M"))-
   as.numeric(as.POSIXct(train$Start_Time, 
@@ -74,6 +74,18 @@ test$duration<-as.numeric(as.POSIXct(test$End_Time,
                                       format = "%Y-%m-%dT%H:%M"))-
   as.numeric(as.POSIXct(test$Start_Time, 
                         format = "%Y-%m-%dT%H:%M"))
+
+train$time = ymd_hms(train$Start_Time)
+test$time = ymd_hms(test$Start_Time)
+
+train$hour=hour(train$time)
+test$hour=hour(test$time)
+
+train$year = year(train$time)
+test$year = year(test$time)
+
+train$isRushHour = train$hour %in% c(7,8,17,18)
+test$isRushHour = test$hour %in% c(7,8,17,18)
 
 train$road_closed<-str_detect(train$Description, "Road closed")
 test$road_closed<-str_detect(test$Description, "Road closed")
@@ -194,7 +206,8 @@ train.test.data = train[train.test.index,]
 library(tree)
 tree.model = tree(as.factor(Severity) ~ 
                     road_closed+
-                    duration,
+                    duration+
+                    isRushHour,
                   train.train.data)
 summary(tree.model)
 
