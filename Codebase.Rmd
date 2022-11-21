@@ -87,9 +87,40 @@ test$year = year(test$time)
 train$isRushHour = train$hour %in% c(7,8,17,18)
 test$isRushHour = test$hour %in% c(7,8,17,18)
 
-train$road_closed<-str_detect(train$Description, "Road closed")
-test$road_closed<-str_detect(test$Description, "Road closed")
+train$Description = tolower(train$Description)
+test$Description = tolower(test$Description)
 
+train$DescriptionLen = nchar(train$Description)
+test$DescriptionLen = nchar(test$Description)
+
+
+train$road_closed<-str_detect(train$Description, "road closed")
+test$road_closed<-str_detect(test$Description, "road closed")
+
+# train$exit<-str_detect(train$Description, "exit")
+# test$exit<-str_detect(test$Description, "exit")
+
+# train$ramp_str<-str_detect(train$Description, "ramp")
+# test$ramp_str<-str_detect(test$Description, "ramp")
+
+train$slow<-str_detect(train$Description, "slow")
+test$slow<-str_detect(test$Description, "slow")
+
+train$caution<-str_detect(train$Description, "caution")
+test$caution<-str_detect(test$Description, "caution")
+
+train$interstate<-str_detect(train$Description, "i-")
+test$interstate<-str_detect(test$Description, "i-")
+
+wy = c("fwy", "pkwy")
+train$wy<-str_detect(train$Description, wy)
+test$wy<-str_detect(test$Description, wy)
+
+high.risk.states = c("CA","TX","IL","FL","CO")
+train$isHighRiskState<-train$State %in%
+  high.risk.states
+test$isHighRiskState<-test$State %in%
+  high.risk.states
 # ggplot(aes(x = as.factor(Severity), 
 #            y = duration), data = accTrain) + 
 #   geom_boxplot()
@@ -190,6 +221,18 @@ test$Wind_Speed.mph.[is.na(test$Wind_Speed.mph.)] <- median(test$Wind_Speed.mph.
 # write.csv(sample, "sample.csv", row.names = FALSE)
 ```
 
+## Text Analysis
+```{r}
+mild.description = train[train$Severity=="MILD",
+                         "Description"]
+sever.description =
+  train[train$Severity=="SEVERE",
+        "Description"]
+write.csv(mild.description, "mild_desc.csv", row.names = FALSE)
+write.csv(sever.description, "severe_desc.csv", row.names = FALSE)
+
+```
+ 
 
 ## Tree Model
 
@@ -207,7 +250,10 @@ library(tree)
 tree.model = tree(as.factor(Severity) ~ 
                     road_closed+
                     duration+
-                    isRushHour,
+                    DescriptionLen+
+                    slow+
+                    isHighRiskState+
+                    caution,
                   train.train.data)
 summary(tree.model)
 
@@ -220,6 +266,20 @@ train.test.pred = predict(tree.model, newdata = train.test.data,
 table(train.test.pred, train.test.data$Severity)
 tree.mis.rate=mean(train.test.pred!=train.test.data$Severity)
 tree.mis.rate
+
+misclassified.index = which(train.test.pred=="MILD" & train.test.data$Severity=="SEVERE")
+misclass.data = train.test.data[misclassified.index,]
+write.csv(misclass.data, 
+          "misclassified_data.csv", row.names = FALSE)
+
+misclass.data%>%
+  group_by(State)%>%
+  summarise(proportion = n()/650)%>%
+  arrange(desc(proportion))
+
+write.csv(misclass.data$Description, 
+          "mis_desc.csv", row.names = FALSE)
+
 ```
 
 ```{r}
@@ -228,19 +288,99 @@ testPred = predict(tree.model, newdata = test,
 # pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
 sample = data.frame(Ob=1:15000, SEVERITY=testPred)
 write.csv(sample, "sample.csv", row.names = FALSE)
-
 ```
 
-
-
+## Random Forrest
 
 ```{r}
-summary(model1)
+set.seed(123)
+library(randomForest)
+rf.model = randomForest(as.factor(Severity) ~ 
+                      road_closed+
+                      duration+
+                      isRushHour+
+                      caution+
+                        slow+
+                        DescriptionLen+
+                        isHighRiskState+
+                      interstate,
+                    data = train.train.data)
+summary(rf.model)
+varImpPlot(rf.model)
+
+train.test.pred = predict(rf.model, newdata = train.test.data,
+                         type = "class")
+table(train.test.pred, train.test.data$Severity)
+tree.mis.rate=mean(train.test.pred!=train.test.data$Severity)
+tree.mis.rate
+
 ```
 
 ```{r}
-trainPred <- predict(model1, type="response")
-predTrain <- ifelse(trainPred >= 0.5, "SEVERE", "MILD")
-table(train$Severity, predTrain)
-mean(train$Severity == predTrain)
+testPred = predict(rf.model, newdata = test,
+                         type = "class")
+# pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
+sample = data.frame(Ob=1:15000, SEVERITY=testPred)
+write.csv(sample, "sample.csv", row.names = FALSE)
 ```
+
+
+## GLM Model
+
+```{r}
+glm.model <- glm(as.factor(Severity)~
+                   road_closed+
+                   duration+
+                   slow+
+                   interstate+
+                   caution+
+                   DescriptionLen, family = binomial(), data = train.train.data)
+
+summary(glm.model)
+
+glm.predict <- predict(glm.model, train.test.data,
+                       type="response")
+predTrain <- ifelse(glm.predict >= 0.3, "SEVERE", "MILD")
+table(train.test.data$Severity, predTrain)
+mean(train.test.data$Severity != predTrain)
+
+
+# pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
+# sample = data.frame(Ob=1:15000, SEVERITY=pred)
+# write.csv(sample, "sample.csv", row.names = FALSE)
+
+# train.test.pred = predict(glm.model, newdata = train.test.data,type = "class")
+# table(train.test.pred, train.test.data$Severity)
+# tree.mis.rate=mean(train.test.pred!=train.test.data$Severity)
+# tree.mis.rate
+```
+
+
+## XGBoost model
+
+```{r}
+library(caret)
+library(xgboost)
+
+set.seed(123)
+xgb_default <- train(as.factor(Severity) ~ road_closed+
+                   duration+
+                   slow+
+                   interstate+
+                   caution+
+                   DescriptionLen,
+                   data = train.train.data, method = "xgbTree",
+                   trControl = trainControl("cv", number = 10))
+
+library(tidyverse)
+pred_xgb <- xgb_default %>% predict(train.test.data)
+# Compute model prediction accuracy rate
+mean(pred_xgb != train.test.data$Severity)
+
+pred = xgb_default %>% predict(test)
+sample = data.frame(Ob=1:15000, SEVERITY=pred)
+write.csv(sample, "sample.csv", row.names = FALSE)
+```
+
+
+
