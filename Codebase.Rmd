@@ -265,13 +265,21 @@ train.test.data = train[train.test.index,]
 ```{r}
 library(tree)
 tree.model = tree(as.factor(Severity) ~ 
-                    road_closed+
-                    duration+
-                    
-                    DescriptionLen+
-                    slow+
-                    isHighRiskState+
-                    caution,
+                        road_closed+
+                        duration+
+                        isWeekend+
+                        caution+
+                        Distance.mi.+
+                        slow+
+                        DescriptionLen+
+                        isHighRiskState+
+                        interstate+
+                          hour+
+                          month+
+                          year+
+                          County+
+                          Visibility.mi.+
+                          isLargeCity,
                   train.train.data)
 summary(tree.model)
 
@@ -317,17 +325,14 @@ rf.model = randomForest(as.factor(Severity) ~
                         road_closed+
                         duration+
                         isWeekend+
-                        caution+
                         Distance.mi.+
                         slow+
                         DescriptionLen+
                         isHighRiskState+
-                        interstate+
                           hour+
                           month+
-                          County+
-                          Visibility.mi.+
-                          isLargeCity
+                          year+
+                          County
                           ,
                         data = train.train.data)
 summary(rf.model)
