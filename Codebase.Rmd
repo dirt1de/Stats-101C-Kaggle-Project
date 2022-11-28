@@ -11,34 +11,41 @@ date: "2022-11-04"
 ```{r}
 test <- read.csv("AcctestNoYNew.csv")
 train <- read.csv("Acctrain.csv")
+cityPop = read.csv("cityPop.csv")
+largeCities = cityPop[cityPop$population>=500000,"city"]
+colnames(cityPop)[1] = "population"
 ```
 
 ```{r}
-sapply(as.data.frame(is.na(train)), sum)
-train$Temperature.F.[is.na(train$Temperature.F.)] <- mean(train$Temperature.F.[!is.na(train$Temperature.F.)])
-
-train$Wind_Chill.F.[is.na(train$Wind_Chill.F.)] <- mean(train$Wind_Chill.F.[!is.na(train$Wind_Chill.F.)])
-
-train$Pressure.in.[is.na(train$Pressure.in.)] <- mean(train$Pressure.in.[!is.na(train$Pressure.in.)])
-
-train$Visibility.mi.[is.na(train$Visibility.mi.)] <- mean(train$Visibility.mi.[!is.na(train$Visibility.mi.)])
-
-train$Wind_Speed.mph.[is.na(train$Wind_Speed.mph.)] <- mean(train$Wind_Speed.mph.[!is.na(train$Wind_Speed.mph.)])
-
+# sapply(as.data.frame(is.na(train)), sum)
+# train$Temperature.F.[is.na(train$Temperature.F.)] <- mean(train$Temperature.F.[!is.na(train$Temperature.F.)])
+# 
+# train$Wind_Chill.F.[is.na(train$Wind_Chill.F.)] <- mean(train$Wind_Chill.F.[!is.na(train$Wind_Chill.F.)])
+# 
+# train$Pressure.in.[is.na(train$Pressure.in.)] <- mean(train$Pressure.in.[!is.na(train$Pressure.in.)])
+# 
+# train$Visibility.mi.[is.na(train$Visibility.mi.)] <- mean(train$Visibility.mi.[!is.na(train$Visibility.mi.)])
+# 
+# train$Wind_Speed.mph.[is.na(train$Wind_Speed.mph.)] <- mean(train$Wind_Speed.mph.[!is.na(train$Wind_Speed.mph.)])
+# 
+# train$City[is.na(train$City)] =
+#   mode(train$City[!is.na(train$City)])
 
 # model1 <- glm(as.factor(Severity)~Start_Lat+Start_Lng+End_Lat+End_Lng+Temperature.F.+Wind_Chill.F.+Pressure.in.+Visibility.mi.+Wind_Speed.mph., family = binomial(), data = train)
 
-sapply(as.data.frame(is.na(test)), sum)
-test$Temperature.F.[is.na(test$Temperature.F.)] <- mean(test$Temperature.F.[!is.na(test$Temperature.F.)])
-
-test$Wind_Chill.F.[is.na(test$Wind_Chill.F.)] <- mean(test$Wind_Chill.F.[!is.na(test$Wind_Chill.F.)])
-
-test$Pressure.in.[is.na(test$Pressure.in.)] <- mean(test$Pressure.in.[!is.na(test$Pressure.in.)])
-
-test$Visibility.mi.[is.na(test$Visibility.mi.)] <- mean(test$Visibility.mi.[!is.na(test$Visibility.mi.)])
-
-test$Wind_Speed.mph.[is.na(test$Wind_Speed.mph.)] <- mean(test$Wind_Speed.mph.[!is.na(test$Wind_Speed.mph.)])
-
+# sapply(as.data.frame(is.na(test)), sum)
+# test$Temperature.F.[is.na(test$Temperature.F.)] <- mean(test$Temperature.F.[!is.na(test$Temperature.F.)])
+# 
+# test$Wind_Chill.F.[is.na(test$Wind_Chill.F.)] <- mean(test$Wind_Chill.F.[!is.na(test$Wind_Chill.F.)])
+# 
+# test$Pressure.in.[is.na(test$Pressure.in.)] <- mean(test$Pressure.in.[!is.na(test$Pressure.in.)])
+# 
+# test$Visibility.mi.[is.na(test$Visibility.mi.)] <- mean(test$Visibility.mi.[!is.na(test$Visibility.mi.)])
+# 
+# test$Wind_Speed.mph.[is.na(test$Wind_Speed.mph.)] <- mean(test$Wind_Speed.mph.[!is.na(test$Wind_Speed.mph.)])
+# 
+# test$City[is.na(test$City)] =
+#   mode(test$City[!is.na(test$City)])
 # testPred <- predict(model1, test, type="response")
 
 # pred <- ifelse(testPred >= 0.5, "SEVERE", "MILD")
@@ -80,6 +87,9 @@ test$time = ymd_hms(test$Start_Time)
 
 train$hour=hour(train$time)
 test$hour=hour(test$time)
+
+train$month=month(train$time)
+test$month=month(test$time)
 
 train$year = year(train$time)
 test$year = year(test$time)
@@ -141,6 +151,13 @@ test$isWeekend = ifelse(test$isWeekend==TRUE, 1, 0)
 ```
 
 
+### Add isLargeCity
+
+```{r}
+train$isLargeCity = train$City %in% largeCities
+test$isLargeCity = test$City %in% largeCities
+```
+
 ```{r}
 train$Bump = ifelse(train$Bump == TRUE, 1, 0)
 train$Give_Way = ifelse(train$Give_Way == TRUE, 1, 0)
@@ -159,7 +176,7 @@ test$Turning_Loop = ifelse(test$Turning_Loop==TRUE, 1, 0)
 
 
 ```{r}
-sapply(as.data.frame(is.na(train)), sum)
+# sapply(as.data.frame(is.na(train)), sum)
 train$Temperature.F.[is.na(train$Temperature.F.)] <- median(train$Temperature.F.[!is.na(train$Temperature.F.)])
 
 train$Wind_Chill.F.[is.na(train$Wind_Chill.F.)] <- median(train$Wind_Chill.F.[!is.na(train$Wind_Chill.F.)])
@@ -203,7 +220,7 @@ train$Wind_Speed.mph.[is.na(train$Wind_Speed.mph.)] <- median(train$Wind_Speed.m
 #                 Roundabout+
 #                 Traffic_Calming+Turning_Loop, family = binomial(), data = train)
 
-sapply(as.data.frame(is.na(test)), sum)
+# sapply(as.data.frame(is.na(test)), sum)
 test$Temperature.F.[is.na(test$Temperature.F.)] <- median(test$Temperature.F.[!is.na(test$Temperature.F.)])
 
 test$Wind_Chill.F.[is.na(test$Wind_Chill.F.)] <- median(test$Wind_Chill.F.[!is.na(test$Wind_Chill.F.)])
@@ -223,13 +240,13 @@ test$Wind_Speed.mph.[is.na(test$Wind_Speed.mph.)] <- median(test$Wind_Speed.mph.
 
 ## Text Analysis
 ```{r}
-mild.description = train[train$Severity=="MILD",
-                         "Description"]
-sever.description =
-  train[train$Severity=="SEVERE",
-        "Description"]
-write.csv(mild.description, "mild_desc.csv", row.names = FALSE)
-write.csv(sever.description, "severe_desc.csv", row.names = FALSE)
+# mild.description = train[train$Severity=="MILD",
+#                          "Description"]
+# sever.description =
+#   train[train$Severity=="SEVERE",
+#         "Description"]
+# write.csv(mild.description, "mild_desc.csv", row.names = FALSE)
+# write.csv(sever.description, "severe_desc.csv", row.names = FALSE)
 
 ```
  
@@ -250,6 +267,7 @@ library(tree)
 tree.model = tree(as.factor(Severity) ~ 
                     road_closed+
                     duration+
+                    
                     DescriptionLen+
                     slow+
                     isHighRiskState+
@@ -296,15 +314,22 @@ write.csv(sample, "sample.csv", row.names = FALSE)
 set.seed(123)
 library(randomForest)
 rf.model = randomForest(as.factor(Severity) ~ 
-                      road_closed+
-                      duration+
-                      isRushHour+
-                      caution+
+                        road_closed+
+                        duration+
+                        isWeekend+
+                        caution+
+                        Distance.mi.+
                         slow+
                         DescriptionLen+
                         isHighRiskState+
-                      interstate,
-                    data = train.train.data)
+                        interstate+
+                          hour+
+                          month+
+                          County+
+                          Visibility.mi.+
+                          isLargeCity
+                          ,
+                        data = train.train.data)
 summary(rf.model)
 varImpPlot(rf.model)
 
@@ -328,19 +353,26 @@ write.csv(sample, "sample.csv", row.names = FALSE)
 ## GLM Model
 
 ```{r}
-glm.model <- glm(as.factor(Severity)~
-                   road_closed+
-                   duration+
-                   slow+
-                   interstate+
-                   caution+
-                   DescriptionLen, family = binomial(), data = train.train.data)
+glm.model <- glm(as.factor(Severity) ~ 
+                        road_closed+
+                        duration+
+                        isWeekend+
+                        caution+
+                        Distance.mi.+
+                        slow+
+                        DescriptionLen+
+                        isHighRiskState+
+                        interstate+
+                          Junction+
+                          hour+
+                          month,
+                 family = binomial(), data = train.train.data)
 
 summary(glm.model)
 
 glm.predict <- predict(glm.model, train.test.data,
                        type="response")
-predTrain <- ifelse(glm.predict >= 0.3, "SEVERE", "MILD")
+predTrain <- ifelse(glm.predict >= 0.35, "SEVERE", "MILD")
 table(train.test.data$Severity, predTrain)
 mean(train.test.data$Severity != predTrain)
 
@@ -363,23 +395,28 @@ library(caret)
 library(xgboost)
 
 set.seed(123)
-xgb_default <- train(as.factor(Severity) ~ road_closed+
-                   duration+
-                   slow+
-                   interstate+
-                   caution+
-                   DescriptionLen,
-                   data = train.train.data, method = "xgbTree",
-                   trControl = trainControl("cv", number = 10))
+xgb_default <- train(as.factor(Severity) ~ 
+                        road_closed+
+                        duration+
+                        isWeekend+
+                        isRushHour+
+                        caution+
+                        Distance.mi.+
+                        slow+
+                        DescriptionLen+
+                        isHighRiskState+
+                        interstate,
+                   data = train.train.data, 
+                   method = "xgbTree")
 
 library(tidyverse)
 pred_xgb <- xgb_default %>% predict(train.test.data)
 # Compute model prediction accuracy rate
 mean(pred_xgb != train.test.data$Severity)
 
-pred = xgb_default %>% predict(test)
-sample = data.frame(Ob=1:15000, SEVERITY=pred)
-write.csv(sample, "sample.csv", row.names = FALSE)
+# pred = xgb_default %>% predict(test)
+# sample = data.frame(Ob=1:15000, SEVERITY=pred)
+# write.csv(sample, "sample.csv", row.names = FALSE)
 ```
 
 
