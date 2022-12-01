@@ -327,19 +327,16 @@ write.csv(sample, "sample.csv", row.names = FALSE)
 set.seed(123)
 library(randomForest)
 rf.model = randomForest(as.factor(Severity) ~ 
-                        road_closed+
-                        duration+
-                        isWeekend+
-                          Distance.mi.+
-                        slow+
-                        DescriptionLen+
-                        isHighRiskState+
-                          hour+
-                          month+
-                          year+
-                          City+
-                          County+
-                          State,
+                         road_closed+
+                         duration+
+                         isWeekend+
+                         slow+
+                         DescriptionLen+
+                         isHighRiskState+
+                           hour+
+                           month+
+                           year+
+                           State,
                         data = train.train.data)
 summary(rf.model)
 varImpPlot(rf.model)
