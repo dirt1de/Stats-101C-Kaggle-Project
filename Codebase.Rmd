@@ -11,6 +11,9 @@ date: "2022-11-04"
 ```{r}
 test <- read.csv("AcctestNoYNew.csv")
 train <- read.csv("Acctrain.csv")
+
+train = train[!is.na(train$City),]
+
 cityPop = read.csv("cityPop.csv")
 largeCities = cityPop[cityPop$population>=500000,"city"]
 colnames(cityPop)[1] = "population"
@@ -104,8 +107,8 @@ train$DescriptionLen = nchar(train$Description)
 test$DescriptionLen = nchar(test$Description)
 
 
-train$road_closed<-str_detect(train$Description, "road closed")
-test$road_closed<-str_detect(test$Description, "road closed")
+train$road_closed<-str_detect(train$Description, "road closed") 
+test$road_closed<-str_detect(test$Description, "road closed") 
 
 # train$exit<-str_detect(train$Description, "exit")
 # test$exit<-str_detect(test$Description, "exit")
@@ -131,6 +134,12 @@ train$isHighRiskState<-train$State %in%
   high.risk.states
 test$isHighRiskState<-test$State %in%
   high.risk.states
+
+covid.years = c(2019,2020,2021)
+train$isCovidYears<-train$year %in%
+  covid.years
+test$isCovidYears<-test$year %in%
+  covid.years
 # ggplot(aes(x = as.factor(Severity), 
 #            y = duration), data = accTrain) + 
 #   geom_boxplot()
@@ -268,18 +277,14 @@ tree.model = tree(as.factor(Severity) ~
                         road_closed+
                         duration+
                         isWeekend+
-                        caution+
                         Distance.mi.+
                         slow+
                         DescriptionLen+
                         isHighRiskState+
-                        interstate+
                           hour+
                           month+
                           year+
-                          County+
-                          Visibility.mi.+
-                          isLargeCity,
+                          County,
                   train.train.data)
 summary(tree.model)
 
@@ -293,18 +298,18 @@ table(train.test.pred, train.test.data$Severity)
 tree.mis.rate=mean(train.test.pred!=train.test.data$Severity)
 tree.mis.rate
 
-misclassified.index = which(train.test.pred=="MILD" & train.test.data$Severity=="SEVERE")
-misclass.data = train.test.data[misclassified.index,]
-write.csv(misclass.data, 
-          "misclassified_data.csv", row.names = FALSE)
+# misclassified.in dex = which(train.test.pred=="MILD" & train.test.data$Severity=="SEVERE")
+# misclass.data = train.test.data[misclassified.index,]
+# write.csv(misclass.data, 
+#           "misclassified_data.csv", row.names = FALSE)
 
-misclass.data%>%
-  group_by(State)%>%
-  summarise(proportion = n()/650)%>%
-  arrange(desc(proportion))
+# misclass.data%>%
+#   group_by(State)%>%
+#   summarise(proportion = n()/650)%>%
+#   arrange(desc(proportion))
 
-write.csv(misclass.data$Description, 
-          "mis_desc.csv", row.names = FALSE)
+# write.csv(misclass.data$Description, 
+#           "mis_desc.csv", row.names = FALSE)
 
 ```
 
@@ -325,15 +330,15 @@ rf.model = randomForest(as.factor(Severity) ~
                         road_closed+
                         duration+
                         isWeekend+
-                        Distance.mi.+
+                          Distance.mi.+
                         slow+
                         DescriptionLen+
                         isHighRiskState+
                           hour+
                           month+
                           year+
-                          County
-                          ,
+                          County+
+                          State,
                         data = train.train.data)
 summary(rf.model)
 varImpPlot(rf.model)
