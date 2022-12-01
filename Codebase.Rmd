@@ -337,6 +337,7 @@ rf.model = randomForest(as.factor(Severity) ~
                           hour+
                           month+
                           year+
+                          City+
                           County+
                           State,
                         data = train.train.data)
